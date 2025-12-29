@@ -1,0 +1,75 @@
+# ======================
+# ENV FILES
+# ======================
+.env
+.env.local
+.env.development
+.env.production
+
+# ======================
+# NODE
+# ======================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ======================
+# BUILD OUTPUTS
+# ======================
+dist/
+build/
+out/
+
+# ======================
+# EXPO
+# ======================
+.expo/
+.expo-shared/
+web-build/
+
+# ======================
+# REACT NATIVE
+# ======================
+android/.gradle/
+android/build/
+android/app/build/
+ios/build/
+ios/Pods/
+
+# ======================
+# CACHE
+# ======================
+.cache/
+.tmp/
+.tmp/
+
+# ======================
+# LOGS
+# ======================
+logs/
+*.log
+
+# ======================
+# OS FILES
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# IDE
+# ======================
+.vscode/
+.idea/
+*.swp
+
+# ======================
+# TEST
+# ======================
+coverage/
+
+# ======================
+# MISC
+# ======================
+*.pem
+*.key
