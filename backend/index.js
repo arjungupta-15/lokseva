@@ -4,12 +4,17 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 require("dotenv").config();
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1f6a045f329c2d729ee181bf327a3d583d62b586
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use("/api/issues", require("./routes/issues"));
 app.use("/api/issues", require("./routes/issues"));
 app.use("/uploads", express.static("uploads")); // image serve
+app.use("/api/auth", require("./routes/auth.routes"));
 
 const JWT_SECRET = "lokseva_secret_key"; // later env file me daal sakte ho
 
