@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
@@ -10,12 +11,13 @@ app.use(cors());
 app.use("/api/issues", require("./routes/issues"));
 app.use("/api/issues", require("./routes/issues"));
 app.use("/uploads", express.static("uploads")); // image serve
+app.use("/api/auth", require("./routes/auth.routes"));
 
 const JWT_SECRET = "lokseva_secret_key"; // later env file me daal sakte ho
 
 // 🔗 MongoDB connect
 mongoose
-  .connect("mongodb://127.0.0.1:27017/lokseva")
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.log(err));
 
