@@ -19,15 +19,22 @@ export default function EditProfile() {
     // Load saved user from LocalStorage
     useEffect(() => {
         AsyncStorage.getItem("user").then((u) => {
-            if (u) {
-                const user = JSON.parse(u);
-                setName(user.name || "");
-                setPhone(user.phone || "");
-                setAddress(user.address || "");
-                setProfilePic(user.profilePic || "");
+            if (!u) return;
+
+            let user = {};
+            try {
+                user = JSON.parse(u);
+            } catch {
+                user = {};
             }
+
+            setName(user?.name ?? "");
+            setPhone(user?.phone ?? "");
+            setAddress(user?.address ?? "");
+            setProfilePic(user?.profilePic ?? "");
         });
     }, []);
+
 
     const saveChanges = async () => {
         console.log("SAVING...");
@@ -36,7 +43,7 @@ export default function EditProfile() {
             const token = await AsyncStorage.getItem("token");
             console.log("TOKEN:", token);
 
-            const res = await fetch(`${API_URL}/api/auth/update`, {
+            const res = await fetch(`${API_URL}/api/profile/upload-pic`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -69,11 +76,18 @@ export default function EditProfile() {
             quality: 0.7,
         });
 
-        if (!result.canceled) {
-            uploadProfilePic(result.assets[0].uri);
+        console.log("PICK RESULT:", result);
+
+        // FIXED CHECK
+        if (result?.assets && result.assets.length > 0) {
+            const uri = result.assets[0].uri;
+
+            setProfilePic(uri);  // update UI
+            uploadProfilePic(uri);  // upload to backend
+        } else {
+            console.log("User canceled or no image found.");
         }
     };
-
     const uploadProfilePic = async (imageUri) => {
         try {
             const token = await AsyncStorage.getItem("token");
@@ -119,8 +133,23 @@ export default function EditProfile() {
 
             <Text style={styles.title}>Edit Profile</Text>
 
+            {profilePic ? (
+                <Image
+                    source={{ uri: profilePic }}
+                    style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 60,
+                        alignSelf: "center",
+                        marginBottom: 20,
+                        borderWidth: 2,
+                        borderColor: "#ccc",
+                    }}
+                />
+            ) : null}
+
             <TouchableOpacity onPress={pickImage} style={styles.photoBtn}>
-                <Text style={{ color: "white", fontWeight: "600" }}>
+                <Text style={{ color: "black", fontWeight: "600" }}>
                     Upload Profile Photo
                 </Text>
             </TouchableOpacity>
