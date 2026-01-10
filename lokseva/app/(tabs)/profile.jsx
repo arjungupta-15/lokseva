@@ -77,7 +77,7 @@ export default function Profile() {
         <Image
           source={
             user.profilePic
-              ? { uri: `${API_URL}/${user.profilePic}` }
+              ? { uri: user.profilePic.startsWith("http") ? user.profilePic : `${API_URL}${user.profilePic}` }
               : require("../../assets/images/defaultAvatar.png")
           }
           style={styles.avatar}

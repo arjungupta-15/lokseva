@@ -6,30 +6,37 @@ const User = require("../models/Users");
 
 const router = express.Router();
 
-// Storage config
+// Storage: uploads/profilePics
 const storage = multer.diskStorage({
-  destination: "./uploads/profilePics",
-  filename: function (req, file, cb) {
-    cb(null, "USER-" + Date.now() + path.extname(file.originalname));
-  },
+  destination: "uploads/profilePics",
+  filename: (req, file, cb) => {
+    cb(null, "profile_" + Date.now() + path.extname(file.originalname));
+  }
 });
 
 const upload = multer({ storage });
 
-// Upload route
-router.post("/profile-pic", auth, upload.single("profilePic"), async (req, res) => {
+// 📌 Upload profile picture
+router.post("/upload-pic", auth, upload.single("profilePic"), async (req, res) => {
   try {
-    if (!req.file) return res.json({ success: false, message: "No file uploaded" });
+    if (!req.file) {
+      return res.json({ success: false, message: "No image uploaded" });
+    }
 
-    const picPath = `/uploads/profilePics/${req.file.filename}`;
+    const filePath = `/uploads/profilePics/${req.file.filename}`;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { profilePic: picPath },
+      { profilePic: filePath },
       { new: true }
     );
 
-    res.json({ success: true, pic: picPath, user });
+    res.json({
+      success: true,
+      profilePic: filePath,
+      user
+    });
+
   } catch (err) {
     console.log("UPLOAD ERROR:", err);
     res.json({ success: false, message: "Upload failed" });

@@ -12,14 +12,17 @@ app.use("/api/issues", require("./routes/issues"));
 app.use("/api/issues", require("./routes/issues"));
 app.use("/uploads", express.static("uploads")); // image serve
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/profile", require("./routes/uploadProfile"));
 
 const JWT_SECRET = "lokseva_secret_key"; // later env file me daal sakte ho
 
 // 🔗 MongoDB connect
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.log(err));
+  .connect(process.env.MONGO_URI, {
+    dbName: "lokseva",
+  })
+  .then(() => console.log("✅ MongoDB Connected Successfully!"))
+  .catch((err) => console.log("❌ MongoDB Connection Error:", err));
 
 // 👤 User schema
 const UserSchema = new mongoose.Schema({

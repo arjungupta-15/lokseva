@@ -43,7 +43,7 @@ export default function EditProfile() {
             const token = await AsyncStorage.getItem("token");
             console.log("TOKEN:", token);
 
-            const res = await fetch(`${API_URL}/api/profile/upload-pic`, {
+            const res = await fetch(`${API_URL}/api/auth/update`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -52,7 +52,18 @@ export default function EditProfile() {
                 body: JSON.stringify({ name, phone, address }),
             });
 
-            const data = await res.json();
+            const text = await res.text(); // Read as text first to debug
+            console.log("RAW RESPONSE:", text);
+
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.log("JSON PARSE ERROR:", e);
+                Alert.alert("Error", "Server returned invalid response");
+                return;
+            }
+
             console.log("RESPONSE:", data);
 
             if (!data.success) {
@@ -60,9 +71,12 @@ export default function EditProfile() {
                 return;
             }
 
+            // Update local storage properly
             await AsyncStorage.setItem("user", JSON.stringify(data.user));
 
             Alert.alert("Success", "Profile Updated!");
+            router.push("/profile");
+
         } catch (err) {
             console.log("SAVE ERROR:", err);
             Alert.alert("Error", "Failed to update");
@@ -133,20 +147,33 @@ export default function EditProfile() {
 
             <Text style={styles.title}>Edit Profile</Text>
 
-            {profilePic ? (
-                <Image
-                    source={{ uri: profilePic }}
-                    style={{
-                        width: 120,
-                        height: 120,
-                        borderRadius: 60,
-                        alignSelf: "center",
-                        marginBottom: 20,
-                        borderWidth: 2,
-                        borderColor: "#ccc",
-                    }}
-                />
-            ) : null}
+            {/* Image Helper Logic */}
+            {(() => {
+                let imageSource = null;
+                if (profilePic) {
+                    if (profilePic.startsWith("http") || profilePic.startsWith("file://")) {
+                        imageSource = { uri: profilePic };
+                    } else {
+                        // Handle relative path from backend
+                        imageSource = { uri: `${API_URL}${profilePic}` };
+                    }
+                }
+
+                return imageSource ? (
+                    <Image
+                        source={imageSource}
+                        style={{
+                            width: 120,
+                            height: 120,
+                            borderRadius: 60,
+                            alignSelf: "center",
+                            marginBottom: 20,
+                            borderWidth: 2,
+                            borderColor: "#ccc",
+                        }}
+                    />
+                ) : null;
+            })()}
 
             <TouchableOpacity onPress={pickImage} style={styles.photoBtn}>
                 <Text style={{ color: "black", fontWeight: "600" }}>
