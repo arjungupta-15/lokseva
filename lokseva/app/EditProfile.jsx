@@ -38,12 +38,12 @@ export default function EditProfile() {
 
     const saveChanges = async () => {
         console.log("SAVING...");
-        console.log("URL:", `${API_URL}/api/auth/update`);
+        console.log("URL:", `${API_URL}/api/profile/update`);
         try {
             const token = await AsyncStorage.getItem("token");
             console.log("TOKEN:", token);
 
-            const res = await fetch(`${API_URL}/api/auth/update`, {
+            const res = await fetch(`${API_URL}/api/profile/update`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
