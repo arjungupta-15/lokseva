@@ -42,6 +42,7 @@ export default function Login() {
         style={styles.input}
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
       />
 
       <TextInput

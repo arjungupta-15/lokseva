@@ -175,8 +175,9 @@ export default function EditProfile() {
                 ) : null;
             })()}
 
-            <TouchableOpacity onPress={pickImage} style={styles.photoBtn}>
-                <Text style={{ color: "black", fontWeight: "600" }}>
+            <TouchableOpacity onPress={pickImage} style={[styles.photoBtn, { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 20 }]}>
+                <Ionicons name="camera-outline" size={24} color="black" style={{ marginRight: 8 }} />
+                <Text style={{ color: "black", fontWeight: "600", fontSize: 16 }}>
                     Upload Profile Photo
                 </Text>
             </TouchableOpacity>

@@ -7,14 +7,18 @@ const JWT_SECRET = "lokseva_secret_key"; // In production, use process.env.JWT_S
 // SIGNUP
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, password } = req.body;
+    let { email } = req.body;
+
+    email = email ? email.trim().toLowerCase() : ""; // Normalize
+    const cleanPassword = password ? password.trim() : "";
 
     const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(cleanPassword, 10);
 
     const user = await User.create({
       name,
@@ -32,17 +36,34 @@ exports.signup = async (req, res) => {
 // LOGIN
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    let { email } = req.body;
+
+    // 🛡️ Robustness: Trim whitespace and lowercase email
+    email = email ? email.trim().toLowerCase() : "";
+    const cleanPassword = password ? password.trim() : "";
+
+    console.log(`\n--- LOGIN ATTEMPT ---`);
+    console.log(`Email check: '${email}'`);
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      console.log("❌ User not found in DB");
+      return res.status(400).json({ message: "User not found" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    console.log("✅ User found:", user.email);
+
+    // Debug: Check if password was somehow stored as plain text or malformed
+    // console.log("Stored Hash:", user.password); // Be careful with this in prod!
+
+    const isMatch = await bcrypt.compare(cleanPassword, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      console.log("❌ Password mismatch");
+      return res.status(400).json({ message: "Invalid credentials (password)" });
     }
+
+    console.log("✅ Password matched");
 
     const token = jwt.sign(
       { id: user._id, email: user.email },
@@ -50,7 +71,6 @@ exports.login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // FIXED: Return the FULL user object so data like phone, address, profilePic persist on login
     const userResponse = user.toObject();
     delete userResponse.password;
 
