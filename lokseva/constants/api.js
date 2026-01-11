@@ -1,1 +1,1 @@
-export const API_URL = "http://10.139.247.214:5000";
+export const API_URL = "https://lokseva.onrender.com";

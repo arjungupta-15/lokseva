@@ -78,7 +78,7 @@ export default function Profile() {
           source={
             user.profilePic
               ? { uri: user.profilePic.startsWith("http") ? user.profilePic : `${API_URL}${user.profilePic}` }
-              : require("../../assets/images/defaultAvatar.png")
+              : { uri: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" }
           }
           style={styles.avatar}
         />
