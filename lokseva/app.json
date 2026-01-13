@@ -1,32 +1,64 @@
 {
   "expo": {
-    "name": "lokseva",
+    "name": "LokSeva",
     "slug": "lokseva",
+    "version": "1.0.0",
+    "orientation": "portrait",
     "icon": "./assets/images/image.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/image.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.arjungupta12.lokseva"
+    },
     "android": {
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/foreground.png",
-        "backgroundColor": "#FFFFFF",
-        "monochromeImage": "./assets/images/monochrome.png"
+        "foregroundImage": "./assets/images/image.png",
+        "backgroundColor": "#FFFFFF"
       },
-      "package": "com.anonymous.lokseva"
+      "package": "com.arjungupta12.lokseva",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/images/image.png"
     },
     "plugins": [
       "expo-router",
       [
-        "expo-splash-screen",
+        "expo-location",
         {
-          "backgroundColor": "#FFFFFF"
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to location to report issues accurately."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "This app needs access to photos to attach evidence to reports.",
+          "cameraPermission": "This app needs access to camera to take photos for issue reports."
         }
       ]
     ],
     "extra": {
-      "router": {},
+      "router": {
+        "origin": false
+      },
       "eas": {
-        "projectId": "1caa8325-20fb-48fa-8c0a-313f6d445033"
+        "projectId": "39d9c032-b373-41f2-9a58-63b2cdc3eb15"
       }
     },
-    "owner": "arya114"
+    "owner": "arjungupta12"
   }
 }

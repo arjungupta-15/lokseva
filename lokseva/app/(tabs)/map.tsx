@@ -1,5 +1,4 @@
-// app/(tabs)/map.jsx
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -9,49 +8,62 @@ import {
   RefreshControl,
   Platform,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import axios from "axios";
 import { useIsFocused } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { COLORS } from "../../constants/colors";
 import { API_URL } from "../../constants/api";
+
+// Platform-specific imports
+let MapView, Marker, PROVIDER_GOOGLE;
+if (Platform.OS !== 'web') {
+  const Maps = require('react-native-maps');
+  MapView = Maps.default;
+  Marker = Maps.Marker;
+  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
+}
 
 export default function MapScreen() {
   const mapRef = useRef(null);
   const isFocused = useIsFocused();
+  const router = useRouter();
 
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchIssues = useCallback(async () => {
+  const fetchIssues = async () => {
     try {
       setLoading(true);
       const res = await axios.get(`${API_URL}/api/issues`);
-      // expecting res.data = array of issues
       setIssues(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Map fetch error:", err.message || err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  // refresh when screen focused (so after submit it will re-fetch)
   useEffect(() => {
-    if (isFocused) fetchIssues();
-  }, [isFocused, fetchIssues]);
+    if (isFocused) {
+      fetchIssues();
+    }
+  }, [isFocused]);
 
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
     await fetchIssues();
     setRefreshing(false);
-  }, [fetchIssues]);
+  };
 
-  const getMarkerColor = (p) =>
-    p === "HIGH" ? "red" : p === "MEDIUM" ? "orange" : "green";
+  const getMarkerColor = (priority) => {
+    if (priority === "HIGH") return "red";
+    if (priority === "MEDIUM") return "orange";
+    return "green";
+  };
 
   const zoomToIssue = (issue) => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || Platform.OS === 'web') return;
     mapRef.current.animateToRegion(
       {
         latitude: Number(issue.latitude) || issue.latitude,
@@ -63,22 +75,16 @@ export default function MapScreen() {
     );
   };
 
-  const renderMarker = (i) => (
-    <Marker
-      key={i._id ?? i.id}
-      coordinate={{
-        latitude: Number(i.latitude) || 0,
-        longitude: Number(i.longitude) || 0,
-      }}
-      pinColor={getMarkerColor(i.priority)}
-      title={i.category || i.title}
-      description={i.status}
-    />
-  );
+  const renderMapView = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0' }]}>
+          <Text style={{ fontSize: 16, color: '#666' }}>Map not available on web</Text>
+        </View>
+      );
+    }
 
-  return (
-    <View style={styles.container}>
-      {/* MAP */}
+    return (
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
@@ -89,20 +95,36 @@ export default function MapScreen() {
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
-        customMapStyle={darkMapStyle} // dark style applied
+        customMapStyle={darkMapStyle}
         showsUserLocation={true}
         showsMyLocationButton={true}
       >
-        {issues.map(renderMarker)}
+        {issues.map((issue, index) => (
+          <Marker
+            key={issue._id || index}
+            coordinate={{
+              latitude: Number(issue.latitude) || 0,
+              longitude: Number(issue.longitude) || 0,
+            }}
+            pinColor={getMarkerColor(issue.priority)}
+            title={issue.category || issue.title}
+            description={issue.status}
+          />
+        ))}
       </MapView>
+    );
+  };
 
-      {/* LIST */}
+  return (
+    <View style={styles.container}>
+      {renderMapView()}
+
       <View style={styles.listContainer}>
         <Text style={styles.heading}>Reported Issues Near You</Text>
 
         <FlatList
           data={issues}
-          keyExtractor={(item) => item._id ?? item.id}
+          keyExtractor={(item, index) => item._id || index.toString()}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -115,7 +137,7 @@ export default function MapScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.card}
-              onPress={() => zoomToIssue(item)}
+              onPress={() => router.push(`/issue-details?id=${item._id}`)}
             >
               <Text style={styles.cardTitle}>
                 {item.category || item.title}
@@ -141,7 +163,9 @@ export default function MapScreen() {
                       color:
                         item.status === "RESOLVED"
                           ? "green"
-                          : item.status === "IN_REVIEW"
+                          : item.status === "IN_PROGRESS"
+                          ? "#9370DB"
+                          : item.status === "ACKNOWLEDGED"
                           ? "#1e90ff"
                           : "orange",
                     },

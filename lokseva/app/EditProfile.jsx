@@ -1,10 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { API_URL } from "../constants/api";
-import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "react-native";
 
@@ -15,6 +14,7 @@ export default function EditProfile() {
     const [phone, setPhone] = useState("");
     const [address, setAddress] = useState("");
     const [profilePic, setProfilePic] = useState("");
+    const [loading, setLoading] = useState(false);
 
     // Load saved user from LocalStorage
     useEffect(() => {
@@ -35,13 +35,12 @@ export default function EditProfile() {
         });
     }, []);
 
-
     const saveChanges = async () => {
-        console.log("SAVING...");
-        console.log("URL:", `${API_URL}/api/profile/update`);
+        if (loading) return;
+        
+        setLoading(true);
         try {
             const token = await AsyncStorage.getItem("token");
-            console.log("TOKEN:", token);
 
             const res = await fetch(`${API_URL}/api/profile/update`, {
                 method: "PUT",
@@ -52,22 +51,11 @@ export default function EditProfile() {
                 body: JSON.stringify({ name, phone, address }),
             });
 
-            const text = await res.text(); // Read as text first to debug
-            console.log("RAW RESPONSE:", text);
+            const data = await res.json();
 
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.log("JSON PARSE ERROR:", e);
-                Alert.alert("Error", "Server returned invalid response");
-                return;
-            }
-
-            console.log("RESPONSE:", data);
-
-            if (!data.success) {
-                Alert.alert("Error", "Something went wrong");
+            if (!res.ok) {
+                Alert.alert("Error", data.message || "Something went wrong");
+                setLoading(false);
                 return;
             }
 
@@ -75,11 +63,12 @@ export default function EditProfile() {
             await AsyncStorage.setItem("user", JSON.stringify(data.user));
 
             Alert.alert("Success", "Profile Updated!");
-            router.push("/profile");
+            setLoading(false);
+            router.push("/(tabs)/profile");
 
         } catch (err) {
-            console.log("SAVE ERROR:", err);
-            Alert.alert("Error", "Failed to update");
+            setLoading(false);
+            Alert.alert("Error", "Network error. Please try again.");
         }
     };
 
@@ -90,18 +79,13 @@ export default function EditProfile() {
             quality: 0.7,
         });
 
-        console.log("PICK RESULT:", result);
-
-        // FIXED CHECK
         if (result?.assets && result.assets.length > 0) {
             const uri = result.assets[0].uri;
-
-            setProfilePic(uri);  // update UI
-            uploadProfilePic(uri);  // upload to backend
-        } else {
-            console.log("User canceled or no image found.");
+            setProfilePic(uri);
+            uploadProfilePic(uri);
         }
     };
+
     const uploadProfilePic = async (imageUri) => {
         try {
             const token = await AsyncStorage.getItem("token");
@@ -134,52 +118,32 @@ export default function EditProfile() {
                 Alert.alert("Error", "Upload failed");
             }
         } catch (err) {
-            console.log(err);
+            Alert.alert("Error", "Upload failed");
         }
     };
+
     return (
         <View style={styles.container}>
-
-            {/* 🔙 Back Button  */}
             <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
                 <Ionicons name="arrow-back" size={26} color="#000" />
             </TouchableOpacity>
 
             <Text style={styles.title}>Edit Profile</Text>
 
-            {/* Image Helper Logic */}
-            {(() => {
-                let imageSource = null;
-                if (profilePic) {
-                    if (profilePic.startsWith("http") || profilePic.startsWith("file://")) {
-                        imageSource = { uri: profilePic };
-                    } else {
-                        // Handle relative path from backend
-                        imageSource = { uri: `${API_URL}${profilePic}` };
-                    }
-                }
+            {profilePic ? (
+                <Image
+                    source={{ 
+                        uri: profilePic.startsWith("http") || profilePic.startsWith("file://") 
+                            ? profilePic 
+                            : `${API_URL}${profilePic}` 
+                    }}
+                    style={styles.profileImage}
+                />
+            ) : null}
 
-                return imageSource ? (
-                    <Image
-                        source={imageSource}
-                        style={{
-                            width: 120,
-                            height: 120,
-                            borderRadius: 60,
-                            alignSelf: "center",
-                            marginBottom: 20,
-                            borderWidth: 2,
-                            borderColor: "#ccc",
-                        }}
-                    />
-                ) : null;
-            })()}
-
-            <TouchableOpacity onPress={pickImage} style={[styles.photoBtn, { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 20 }]}>
+            <TouchableOpacity onPress={pickImage} style={styles.photoBtn}>
                 <Ionicons name="camera-outline" size={24} color="black" style={{ marginRight: 8 }} />
-                <Text style={{ color: "black", fontWeight: "600", fontSize: 16 }}>
-                    Upload Profile Photo
-                </Text>
+                <Text style={styles.photoBtnText}>Upload Profile Photo</Text>
             </TouchableOpacity>
 
             <TextInput
@@ -204,8 +168,14 @@ export default function EditProfile() {
                 onChangeText={setAddress}
             />
 
-            <TouchableOpacity style={styles.saveBtn} onPress={saveChanges}>
-                <Text style={styles.saveText}>Save Changes</Text>
+            <TouchableOpacity 
+                style={[styles.saveBtn, loading && styles.saveBtnDisabled]} 
+                onPress={saveChanges}
+                disabled={loading}
+            >
+                <Text style={styles.saveText}>
+                    {loading ? "Saving..." : "Save Changes"}
+                </Text>
             </TouchableOpacity>
         </View>
     );
@@ -214,7 +184,7 @@ export default function EditProfile() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 60, // 👈 Top spacing fixed
+        paddingTop: 60,
         paddingHorizontal: 20,
         backgroundColor: "#f7f7f7",
     },
@@ -229,6 +199,34 @@ const styles = StyleSheet.create({
         fontSize: 26,
         fontWeight: "700",
         marginBottom: 20,
+    },
+
+    profileImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        alignSelf: "center",
+        marginBottom: 20,
+        borderWidth: 2,
+        borderColor: "#ccc",
+    },
+
+    photoBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 20,
+        padding: 12,
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#eee",
+    },
+
+    photoBtnText: {
+        color: "black",
+        fontWeight: "600",
+        fontSize: 16,
     },
 
     input: {
@@ -247,6 +245,10 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderRadius: 12,
         alignItems: "center",
+    },
+
+    saveBtnDisabled: {
+        backgroundColor: "#ccc",
     },
 
     saveText: {

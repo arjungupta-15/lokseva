@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { COLORS } from "../constants/colors";
-import { useEffect, useState,useCallback } from "react";
+import { useState } from "react";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../constants/api";
@@ -18,17 +18,12 @@ import { useFocusEffect } from "@react-navigation/native";
 
 export default function MyIssues() {
   const router = useRouter();
-  const [myIssues, setMyIssues] = useState([]); // ✅ backend data
+  const [myIssues, setMyIssues] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchMyIssues();
-    }, [])
-  );
-
-  // 🔗 backend call
   const fetchMyIssues = async () => {
     try {
+      setLoading(true);
       const token = await AsyncStorage.getItem("token");
 
       const res = await axios.get(`${API_URL}/api/issues/my`, {
@@ -40,8 +35,14 @@ export default function MyIssues() {
       setMyIssues(res.data);
     } catch (err) {
       console.log("Error loading issues", err.message);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useFocusEffect(() => {
+    fetchMyIssues();
+  });
 
   const getStatusColor = (status) => {
     if (status === "RESOLVED") return "green";
@@ -57,7 +58,6 @@ export default function MyIssues() {
 
   return (
     <View style={styles.container}>
-      {/* 🔙 HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.navy} />
@@ -66,13 +66,15 @@ export default function MyIssues() {
         <Text style={styles.headerTitle}>My Reported Issues</Text>
       </View>
 
-      {/* 📋 LIST */}
       <FlatList
         data={myIssues}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item, index) => item._id || index.toString()}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <TouchableOpacity 
+            style={styles.card}
+            onPress={() => router.push(`/issue-details?id=${item._id}`)}
+          >
             <Text style={styles.title}>{item.category}</Text>
             <Text style={styles.location}>{item.location}</Text>
 
@@ -95,11 +97,19 @@ export default function MyIssues() {
                 {item.priority}
               </Text>
             </View>
-          </View>
+
+            {/* Show if feedback needed */}
+            {item.status === "RESOLVED" && !item.feedback && (
+              <View style={styles.feedbackPrompt}>
+                <Ionicons name="star-outline" size={16} color="#FFD700" />
+                <Text style={styles.feedbackText}>Tap to rate resolution</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         )}
         ListEmptyComponent={
           <Text style={styles.empty}>
-            You have not reported any issues yet.
+            {loading ? "Loading..." : "You have not reported any issues yet."}
           </Text>
         }
       />
@@ -107,7 +117,6 @@ export default function MyIssues() {
   );
 }
 
-/* ---------- STYLES (same as yours) ---------- */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -178,5 +187,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 40,
     color: "#999",
+  },
+
+  feedbackPrompt: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+
+  feedbackText: {
+    marginLeft: 6,
+    fontSize: 12,
+    color: "#FFD700",
+    fontWeight: "600",
   },
 });
