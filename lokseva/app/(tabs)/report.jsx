@@ -53,7 +53,7 @@ export default function Report() {
       }
 
       const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
+        accuracy: Location.Accuracy.Balanced,
       });
 
       const { latitude, longitude } = loc.coords;
@@ -92,7 +92,9 @@ export default function Report() {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
+      quality: 0.5,
+      allowsEditing: true,
+      aspect: [4, 3],
     });
 
     if (!result.canceled) {

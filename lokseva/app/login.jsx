@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../constants/api";
@@ -8,28 +8,43 @@ export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (loading) return;
+    
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Error", "Please fill all fields");
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email: email.trim().toLowerCase(), 
+          password: password.trim() 
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         Alert.alert("Error", data.message);
+        setLoading(false);
         return;
       }
 
       await AsyncStorage.setItem("token", data.token);
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
 
+      setLoading(false);
       router.replace("/(tabs)");
     } catch (err) {
-      Alert.alert("Error", "Server not reachable");
+      setLoading(false);
+      Alert.alert("Error", "Network error. Please check your connection.");
     }
   };
 
@@ -42,6 +57,7 @@ export default function Login() {
         style={styles.input}
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
       />
 
       <TextInput
@@ -52,8 +68,16 @@ export default function Login() {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity style={styles.btn} onPress={handleLogin}>
-        <Text style={styles.btnText}>Login</Text>
+      <TouchableOpacity 
+        style={[styles.btn, loading && styles.btnDisabled]} 
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.btnText}>Login</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push("/signup")}>
@@ -68,6 +92,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, textAlign: "center", marginBottom: 20 },
   input: { borderWidth: 1, padding: 12, marginBottom: 12, borderRadius: 10 },
   btn: { backgroundColor: "#138808", padding: 14, borderRadius: 12 },
+  btnDisabled: { backgroundColor: "#ccc" },
   btnText: { color: "#fff", textAlign: "center", fontWeight: "700" },
   link: { textAlign: "center", marginTop: 14, color: "#FF9933" },
 });

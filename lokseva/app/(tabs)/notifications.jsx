@@ -8,40 +8,42 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
-import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "../../constants/api";
+import { useState } from "react";
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState([]);
+  // 🟢 DUMMY DATA
+  const [notifications, setNotifications] = useState([
+    {
+      _id: "1",
+      type: "SUCCESS",
+      message: "Your reported pothole issue has been resolved!",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "2",
+      type: "INFO",
+      message: "Admin requested more details on your report.",
+      createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    },
+    {
+      _id: "3",
+      type: "SUCCESS",
+      message: "Profile updated successfully.",
+      createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    },
+    {
+      _id: "4",
+      type: "INFO",
+      message: "Welcome to LokSeva app! We are here to help.",
+      createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+    },
+  ]);
 
   const getIcon = (type) =>
     type === "SUCCESS" ? "checkmark-circle" : "information-circle";
 
   const getColor = (type) =>
     type === "SUCCESS" ? "green" : COLORS.saffron;
-
-  const loadNotifications = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const user = JSON.parse(await AsyncStorage.getItem("user"));
-
-      const res = await fetch(`${API_URL}/api/notifications/${user.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-      setNotifications(data);
-    } catch (err) {
-      console.log("Notification fetch error:", err);
-    }
-  };
-
-  useEffect(() => {
-    loadNotifications();
-  }, []);
 
   return (
     <View style={styles.container}>

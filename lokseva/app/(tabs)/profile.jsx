@@ -26,11 +26,16 @@ export default function Profile() {
   });
 
   // Load user info from AsyncStorage
-  useEffect(() => {
-    AsyncStorage.getItem("user").then((u) => {
-      if (u) setUser(JSON.parse(u));
-    });
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const loadUser = async () => {
+        const u = await AsyncStorage.getItem("user");
+        if (u) setUser(JSON.parse(u));
+      };
+      loadUser();
+    }, [])
+  );
+
 
   // Fetch stats when screen opens
   const loadStats = async () => {
@@ -72,8 +77,8 @@ export default function Profile() {
         <Image
           source={
             user.profilePic
-              ? { uri: `${API_URL}${user.profilePic}` }
-              : require("../../assets/images/defaultAvatar.png")
+              ? { uri: user.profilePic.startsWith("http") ? user.profilePic : `${API_URL}${user.profilePic}` }
+              : { uri: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" }
           }
           style={styles.avatar}
         />
@@ -120,7 +125,7 @@ export default function Profile() {
 
         <TouchableOpacity
           style={styles.actionBtn}
-          onPress={() => router.push("/edit-profile")}
+          onPress={() => router.push("/EditProfile")}
         >
           <Ionicons name="create-outline" size={20} color={COLORS.navy} />
           <Text style={styles.actionText}>Edit Profile</Text>
